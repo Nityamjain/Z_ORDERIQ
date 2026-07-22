@@ -1,0 +1,30 @@
+projection;
+strict ( 2 );
+use side effects;
+use draft;
+
+
+define behavior for ZC_SalesOrder_IQ //alias <alias_name>
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Edit;
+  use action Resume;
+  use action Activate;
+  use action Discard;
+  use action Prepare;
+
+
+
+  use association _Items { create; with draft; }
+}
+
+define behavior for ZC_SalesOrderItem_IQ //alias <alias_name>
+{
+  use update;
+  use delete;
+
+  use association _SalesOrder { with draft; }
+}

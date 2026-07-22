@@ -1,0 +1,39 @@
+managed implementation in class zbp_i_product_iq unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_Product_IQ //alias <alias_name>
+persistent table zproduct_mstr
+draft table zproduct_d_mastr
+early numbering
+lock master total etag LastChangedAt
+authorization master ( instance )
+etag master LocalLastChangedAt
+{
+
+  create ;
+  update;
+  delete;
+  field ( readonly  ) ProductId;
+
+   draft action Edit;
+   draft action Resume;
+   draft action Activate;
+   draft action Discard;
+   draft determine action Prepare;
+
+
+  mapping for zproduct_mstr corresponding
+  {
+       ProductId = product_id;
+      ProductName = product_name;
+      NetPrice = net_price;
+      Currency = currency;
+      TaxCode = tax_code;
+      StockQuantity = stock_quantity;
+      QuantityUnit = quantity_unit;
+      IsActive = is_active;
+      LastChangedAt = last_changed_at;
+      LocalLastChangedAt = local_last_changed_at;
+  }
+}

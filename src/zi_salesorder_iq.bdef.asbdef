@@ -1,0 +1,163 @@
+    managed implementation in class zbp_i_salesorder_iq unique;
+    strict ( 2 );
+    with draft;
+
+
+    define behavior for ZI_SalesOrder_IQ //alias <alias_name>
+    persistent table zso_header_iq
+    draft table zso_d_header_iq
+    lock master total etag LastChangedAt
+    authorization master ( instance )
+    etag master LocalLastChangedAt
+    {
+      create ( authorization : global );
+      update;
+      delete;
+
+      draft action Edit;
+      draft action Resume;
+      draft action Activate;
+      draft action Discard;
+
+      draft determine action Prepare
+      {
+
+        validation ZI_SalesOrderItem_IQ~validateProduct;
+        validation validateCreditLimit;
+        validation ZI_SalesOrderItem_IQ~validateStock;
+        validation ZI_SalesOrderItem_IQ~validateQuantity;
+        validation ZI_SalesOrderItem_IQ~validate_delivery_date;
+        validation validateDuplicateProduct;
+
+
+      }
+
+
+
+      side effects
+      {
+        field CustomerId affects field OverallStatus, field OrderDate, field Currency;
+
+      }
+
+
+      determination determineOrderID on modify { create; }
+      determination setInitialOrderStatus on modify { create; }
+      determination deriveOrderDate on modify { create; }
+      determination deriveCustomerCurrency on modify { create; field CustomerId; }
+
+
+
+      validation validateCustomer on save { create; update; field CustomerId; }
+      validation validateCreditLimit on save { create; update; }
+       validation validateDuplicateProduct on save { create; update;}
+
+
+
+
+
+
+
+
+      field ( readonly, numbering : managed ) OrderUuid;
+      field ( readonly ) OrderId, Currency;
+      field ( mandatory ) CustomerId, OrderDate, OverallStatus;
+      field ( readonly ) NetAmount, TaxAmount, TotalAmount;
+      association _Items { create; with draft; }
+
+      mapping for zso_header_iq corresponding
+        {
+          OrderUuid          = order_uuid;
+          OrderId            = order_id;
+          CustomerId         = customer_id;
+          OrderDate          = order_date;
+          Currency           = currency;
+          NetAmount          = net_amount;
+          TaxAmount          = tax_amount;
+          TotalAmount        = total_amount;
+          OverallStatus      = overall_status;
+          CreatedBy          = created_by;
+          CreatedAt          = created_at;
+          LastChangedBy      = last_changed_by;
+          LastChangedAt      = last_changed_at;
+          LocalLastChangedAt = local_last_changed_at;
+        }
+    }
+
+    define behavior for ZI_SalesOrderItem_IQ //alias <alias_name>
+    persistent table zso_item_iq
+    draft table zso_d_item_iq
+    lock dependent by _SalesOrder
+    authorization dependent by _SalesOrder
+    //etag master <field_name>
+    {
+      update;
+      delete;
+      field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetPrice, TaxCode, QuantityUnit, Currency;
+      field ( mandatory ) ProductId, OrderQuantity, ItemStatus;
+      field ( readonly, numbering : managed ) ItemUuid;
+      association _SalesOrder{with draft;}
+
+
+      side effects
+      {
+
+        field ProductId
+        affects field RequestedDeliveryDate,
+            field NetAmount,
+            field TaxAmount,
+            field NetPrice,
+            field TaxCode,
+            field Currency,
+            field QuantityUnit,
+            entity _SalesOrder;
+
+        field OrderQuantity
+        affects field NetAmount,
+            field TaxAmount,
+            entity _SalesOrder;
+
+
+      }
+
+
+      determination calculateItemAmount on modify { create; field OrderQuantity, ProductId; }
+      determination calculateItemTax on modify { create; field ProductId, NetAmount; }
+      determination calculateHeaderTotals on modify { create; update; delete; field NetAmount, TaxAmount, NetPrice; }
+      determination deriveProductData on modify { create; field ProductId; }
+      determination deriveDeliveryDate on modify { create; }
+      determination setInitialItemStatus on modify { create; }
+      determination determineItemNumber on modify { create; }
+
+
+
+
+      validation validateProduct on save { create; update; field ProductId; }
+      validation validateStock on save { create; update; field OrderQuantity; }
+      validation validateQuantity on save { create; update; field OrderQuantity; }
+      validation validate_delivery_date on save { create; update;field RequestedDeliveryDate; }
+
+
+
+
+
+
+
+      mapping for zso_item_iq
+        {
+          OrderUuid             = order_uuid;
+          ItemUuid              = item_uuid;
+          ItemNumber            = item_number;
+          ProductId             = product_id;
+          OrderQuantity         = order_quantity;
+          QuantityUnit          = quantity_unit;
+          NetPrice              = net_price;
+          NetAmount             = net_amount;
+          TaxCode               = tax_code;
+          TaxAmount             = tax_amount;
+          Currency              = currency;
+          RequestedDeliveryDate = requested_delivery_date;
+          ItemStatus            = item_status;
+          LocalLastChangedAt    = local_last_changed_at;
+        }
+    }

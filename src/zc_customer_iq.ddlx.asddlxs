@@ -1,0 +1,53 @@
+@Metadata.layer: #CORE
+@Search.searchable: true
+@UI: {
+  headerInfo: {
+    typeName: 'Customer',
+    typeNamePlural: 'Customers',
+    title: { type: #STANDARD, value: 'CustomerName' },
+    description: { type: #STANDARD, value: 'CustomerId' }
+  }
+}
+annotate entity ZC_Customer_IQ with
+{
+   @UI.facet: [
+    { id: 'Customer', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Customers', position: 10}
+  ]
+  
+  @UI.lineItem: [{ position: 10, importance: #HIGH }]
+  @UI.identification: [{ position: 10 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Customer ID'
+  CustomerId;
+
+  @UI.lineItem: [{ position: 20 }]
+  @UI.identification: [{ position: 20 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Customer Name'
+  CustomerName;
+
+  @UI.lineItem: [{ position: 30 }]
+  @UI.identification: [{ position: 30 }]
+  @EndUserText.label: 'Credit Limit'
+  CreditLimit;
+
+  @UI.lineItem: [{ position: 40 }]
+  @UI.identification: [{ position: 40 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Currency'
+  Currency;
+
+  @UI.lineItem: [{ position: 50 }]
+  @UI.identification: [{ position: 50 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Country'
+  Country;
+
+  @UI.lineItem: [{ position: 60}]
+  @UI.identification: [{ position: 60 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Active Status'
+  @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ACTIVE_STATUS' , element:'ActiveStatus'}}] 
+  IsActive;
+
+}

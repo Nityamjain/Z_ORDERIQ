@@ -1,0 +1,7 @@
+@EndUserText.label: 'Order IQ Service'
+define service ZUI_ORDERIQ_O4 {
+  expose ZC_SalesOrder_IQ;
+  expose ZC_SalesOrderItem_IQ;
+  expose ZC_Customer_IQ;
+  expose ZC_Product_IQ;
+}

@@ -1,0 +1,37 @@
+managed implementation in class zbp_i_customer_iq unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_Customer_IQ //alias <alias_name>
+persistent table zcustomer_mstr
+draft table zcustomer_d_mstr
+early numbering
+lock master total etag LastChangedAt
+authorization master ( instance )
+etag master LocalLastChangedAt
+
+{
+  create;
+  update;
+  delete;
+  field ( readonly ) CustomerId;
+
+  draft action Edit;
+  draft action Resume;
+  draft action Activate;
+  draft action Discard;
+  draft determine action Prepare;
+
+
+  mapping for zcustomer_mstr corresponding
+    {
+      CustomerId         = customer_id;
+      CustomerName       = customer_name;
+      CreditLimit        = credit_limit;
+      Currency           = currency;
+      Country            = country;
+      IsActive           = is_active;
+      LastChangedAt      = last_changed_at;
+      LocalLastChangedAt = local_last_changed_at;
+    }
+}

@@ -1,0 +1,65 @@
+@Metadata.layer: #CORE
+@Search.searchable: true
+@UI: {
+  headerInfo: {
+    typeName: 'Product',
+    typeNamePlural: 'Products',
+    title: { type: #STANDARD, value: 'ProductName' },
+    description: { type: #STANDARD, value: 'ProductId' }
+  }
+}
+annotate entity ZC_Product_IQ with
+{
+  @UI.facet: [
+    { id: 'product', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Products', position: 10}
+  ]
+  
+  @UI.lineItem: [{ position: 10, importance: #HIGH }]
+  @UI.identification: [{ position: 10 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Product ID'
+  ProductId;
+
+  @UI.lineItem: [{ position: 20 }]
+  @UI.identification: [{ position: 20 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Product Name'
+  ProductName;
+
+  @UI.lineItem: [{ position: 30 }]
+  @UI.identification: [{ position: 30 }]
+  @EndUserText.label: 'Net Price'
+  NetPrice;
+
+  @UI.lineItem: [{ position: 40 }]
+  @UI.identification: [{ position: 40 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Currency'
+  Currency;
+
+  @UI.lineItem: [{ position: 50 }]
+  @UI.identification: [{ position: 50 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'TAX Code'
+  TaxCode;
+
+  @UI.lineItem: [{ position: 60}]
+  @UI.identification: [{ position: 60 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Quantity'
+  StockQuantity;
+
+  @UI.lineItem: [{ position: 70}]
+  @UI.identification: [{ position: 70 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Unit'
+  QuantityUnit;
+
+  @UI.lineItem: [{ position: 80}]
+  @UI.identification: [{ position: 80 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Active Status'
+  @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ACTIVE_STATUS' , element:'ActiveStatus'}}]
+  IsActive;
+
+}

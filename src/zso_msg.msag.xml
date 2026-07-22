@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_MSAG" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <T100A>
+    <ARBGB>ZSO_MSG</ARBGB>
+    <MASTERLANG>E</MASTERLANG>
+    <STEXT>MESSAGE CLASS FOR ORDERIQ</STEXT>
+   </T100A>
+   <T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>001</MSGNR>
+     <TEXT>Customer ID not Found</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>002</MSGNR>
+     <TEXT>Customer ID is Inactive</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>003</MSGNR>
+     <TEXT>Customer (&amp;1) has exceeded the credit &amp;2 limit by &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>004</MSGNR>
+     <TEXT>Product &amp;1 does not exist</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>005</MSGNR>
+     <TEXT>Product &amp;1 is inactive</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>006</MSGNR>
+     <TEXT>Insufficient stock for product &amp;1. Req: &amp;2, Available: &amp;3</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>007</MSGNR>
+     <TEXT>Order Quantity of &amp;1 must be greater than zero</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>008</MSGNR>
+     <TEXT>Product &amp;1 delivery date must be 7 days after order date</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>009</MSGNR>
+     <TEXT>Requested Delivery Date cannot be in the past.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>010</MSGNR>
+     <TEXT>Customer ID is Mandatory.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>011</MSGNR>
+     <TEXT>Product ID is Mandatory.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>012</MSGNR>
+     <TEXT>Product &amp;1 exists in multiple Items . Only one Item per Product Allowed</TEXT>
+    </T100>
+   </T100>
+  </asx:values>
+ </asx:abap>
+</abapGit>

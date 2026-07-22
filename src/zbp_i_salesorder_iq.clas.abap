@@ -1,0 +1,5 @@
+CLASS zbp_i_salesorder_iq DEFINITION PUBLIC ABSTRACT FINAL FOR BEHAVIOR OF zi_salesorder_iq.
+ENDCLASS.
+
+CLASS zbp_i_salesorder_iq IMPLEMENTATION.
+ENDCLASS.

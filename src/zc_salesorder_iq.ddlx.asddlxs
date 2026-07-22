@@ -1,0 +1,70 @@
+@Metadata.layer: #CORE
+@Search.searchable: true
+@UI: {
+  headerInfo:{
+   typeName: 'Orders',
+   typeNamePlural: 'Orders',
+   typeImageUrl: 'sap-icon://my-sales-order',
+   title:{type: #STANDARD, value: 'OrderId' }
+}
+}
+
+annotate entity ZC_SalesOrder_IQ with
+{
+  @UI.facet: [{ purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'CustomerId',position: 10 },
+              { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 20},
+    { id: 'Orders', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Orders', position: 30 },
+    { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Items', position: 40, targetElement: '_Items' }
+  ]
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @UI.lineItem: [{ position: 10, importance: #HIGH }]
+  @UI.identification: [{ position: 10 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Order ID'
+  OrderId;
+
+  @UI.lineItem: [{ position: 20 }]
+  @UI.identification: [{ position: 20 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Customer ID'
+  @UI.dataPoint:{qualifier: 'CustomerId',title: 'Customer ID' }
+  CustomerId;
+
+  @UI.lineItem: [{ position: 30 }]
+  @UI.identification: [{ position: 30 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Order Date'
+  OrderDate;
+
+  @UI.lineItem: [{ position: 40 }]
+  @UI.identification: [{ position: 40 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Currency'
+  Currency;
+
+  @UI.lineItem: [{ position: 50 }]
+  @UI.identification: [{ position: 50 }]
+  @EndUserText.label: 'Net Amount'
+  NetAmount;
+
+  @UI.lineItem: [{ position: 60 }]
+  @UI.identification: [{ position: 60 }]
+  @EndUserText.label: 'TAX Amount'
+  TaxAmount;
+
+  @UI.lineItem: [{ position: 70 }]
+  @UI.identification: [{ position: 70 }]
+  @EndUserText.label: 'Total Amount'
+  TotalAmount;
+
+  @UI.lineItem: [{ position: 80 }]
+  @UI.identification: [{ position: 80 }]
+  @EndUserText.label: 'Overall Status'
+  @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
+  OverallStatus;
+
+
+}

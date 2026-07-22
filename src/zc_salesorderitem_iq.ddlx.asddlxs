@@ -1,0 +1,87 @@
+@Metadata.layer: #CORE
+@Search.searchable: true
+@UI: {
+  headerInfo:{
+   typeName: 'Item',
+   typeNamePlural: 'Items',
+   typeImageUrl: 'sap-icon://cart-5',
+   title:{type: #STANDARD, value: 'ItemNumber' }
+    }
+}
+annotate entity ZC_SalesOrderItem_IQ with
+{
+
+@UI.facet: [
+    { id: 'Items', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Items', position: 10}
+  ]
+
+
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @UI.hidden: true
+  ItemUuid;
+
+  @UI.lineItem: [{ position: 10, importance: #HIGH }]
+  @UI.identification: [{ position: 10 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Item Number'
+  ItemNumber;
+
+  @UI.lineItem: [{ position: 20 }]
+  @UI.identification: [{ position: 20 }]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Product ID'
+  ProductId;
+
+  @UI.lineItem: [{ position: 30 }]
+  @UI.identification: [{ position: 30 }]
+  @EndUserText.label: 'Quantity'
+  OrderQuantity;
+
+  @UI.lineItem: [{ position: 35 }]
+  @UI.identification: [{ position: 35 }]
+  @EndUserText.label: 'Unit'
+  QuantityUnit;
+
+  @UI.lineItem: [{ position: 45 }]
+  @UI.identification: [{ position: 45 }]
+  @EndUserText.label: 'Net Price'
+  NetPrice;
+
+  @UI.lineItem: [{ position: 55 }]
+  @UI.identification: [{ position: 55 }]
+  @EndUserText.label: 'Net Amount'
+  NetAmount;
+
+  @UI.lineItem: [{ position: 65 }]
+  @UI.identification: [{ position: 65 }]
+  @EndUserText.label: 'Tax Code'
+  TaxCode;
+
+  @UI.lineItem: [{ position: 75 }]
+  @UI.identification: [{ position: 75 }]
+  @EndUserText.label: 'Tax Amount'
+  TaxAmount;
+
+  @UI.lineItem: [{ position: 85 }]
+  @UI.identification: [{ position: 85 }]
+  @EndUserText.label: 'Currency'
+  Currency;
+
+  @UI.lineItem: [{ position: 95 }]
+  @UI.identification: [{ position: 95 }]
+  @EndUserText.label: 'Requested Delivery Date'
+  RequestedDeliveryDate;
+  
+
+
+  @UI.lineItem: [{ position: 105}]
+  @UI.identification: [{ position: 105  }]
+  @EndUserText.label: 'Status'
+  @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ITEM_STATUS' , element:'ItemStatus'}}]
+   
+  ItemStatus;
+
+}
