@@ -9,10 +9,16 @@
     lock master total etag LastChangedAt
     authorization master ( instance )
     etag master LocalLastChangedAt
+
     {
       create ( authorization : global );
       update;
       delete;
+
+      action ( features : instance ) ReleaseOrder result [1] $self;
+      action ( features : instance ) RejectOrder result [1] $self;
+      action ( features : instance ) CancelOrder result [1] $self;
+      action ( features : instance ) CompleteOrder result [1] $self;
 
       draft action Edit;
       draft action Resume;
@@ -50,7 +56,9 @@
 
       validation validateCustomer on save { create; update; field CustomerId; }
       validation validateCreditLimit on save { create; update; }
-       validation validateDuplicateProduct on save { create; update;}
+      validation validateDuplicateProduct on save { create; update; }
+
+
 
 
 
@@ -61,8 +69,8 @@
 
       field ( readonly, numbering : managed ) OrderUuid;
       field ( readonly ) OrderId, Currency;
-      field ( mandatory ) CustomerId, OrderDate, OverallStatus;
-      field ( readonly ) NetAmount, TaxAmount, TotalAmount;
+      field ( mandatory ) CustomerId, OrderDate;
+      field ( readonly ) NetAmount, TaxAmount, OverallStatus, TotalAmount;
       association _Items { create; with draft; }
 
       mapping for zso_header_iq corresponding
@@ -93,10 +101,15 @@
     {
       update;
       delete;
-      field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetPrice, TaxCode, QuantityUnit, Currency;
-      field ( mandatory ) ProductId, OrderQuantity, ItemStatus;
+      field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetPrice, TaxCode, QuantityUnit, Currency,ItemStatus;
+      field ( mandatory ) ProductId, OrderQuantity;
       field ( readonly, numbering : managed ) ItemUuid;
-      association _SalesOrder{with draft;}
+      association _SalesOrder { with draft; }
+
+
+      action ( features : instance ) ConfirmItem result [1] $self;
+      action ( features : instance ) CancelItem result [1] $self;
+      action ( features : instance ) DeliverItem result [1] $self;
 
 
       side effects
@@ -135,7 +148,7 @@
       validation validateProduct on save { create; update; field ProductId; }
       validation validateStock on save { create; update; field OrderQuantity; }
       validation validateQuantity on save { create; update; field OrderQuantity; }
-      validation validate_delivery_date on save { create; update;field RequestedDeliveryDate; }
+      validation validate_delivery_date on save { create; update; field RequestedDeliveryDate; }
 
 
 

@@ -16,6 +16,11 @@ define behavior for ZC_SalesOrder_IQ //alias <alias_name>
   use action Discard;
   use action Prepare;
 
+  use action ReleaseOrder;
+  use action RejectOrder;
+  use action CancelOrder;
+  use action CompleteOrder;
+
 
 
   use association _Items { create; with draft; }
@@ -25,6 +30,10 @@ define behavior for ZC_SalesOrderItem_IQ //alias <alias_name>
 {
   use update;
   use delete;
+
+  use action ConfirmItem;
+  use action CancelItem;
+  use action DeliverItem;
 
   use association _SalesOrder { with draft; }
 }

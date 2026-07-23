@@ -19,9 +19,62 @@ annotate entity ZC_SalesOrder_IQ with
 
   @UI.hidden: true
   OrderUuid;
+  
+  
+  @UI.lineItem: [
+  { position: 10, importance: #HIGH },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ReleaseOrder',
+    label: 'Release',
+    position: 100
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'RejectOrder',
+    label: 'Reject',
+    position: 110
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelOrder',
+    label: 'Cancel',
+    position: 120
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CompleteOrder',
+    label: 'Complete',
+    position: 130
+  }
+]
+@UI.identification: [
+  { position: 10 },
 
-  @UI.lineItem: [{ position: 10, importance: #HIGH }]
-  @UI.identification: [{ position: 10 }]
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ReleaseOrder',
+    label: 'Release'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'RejectOrder',
+    label: 'Reject'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelOrder',
+    label: 'Cancel'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CompleteOrder',
+    label: 'Complete'
+  }
+]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Order ID'
   OrderId;
@@ -61,7 +114,6 @@ annotate entity ZC_SalesOrder_IQ with
   TotalAmount;
 
   @UI.lineItem: [{ position: 80 }]
-  @UI.identification: [{ position: 80 }]
   @EndUserText.label: 'Overall Status'
   @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
   OverallStatus;

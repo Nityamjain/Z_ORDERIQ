@@ -34,7 +34,7 @@ define root view entity ZC_SalesOrder_IQ
       TotalAmount,
 
 
-      @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ORDER_STATUS' , element:'OrderStatus'}}]
+//      @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ORDER_STATUS' , element:'OrderStatus'}}]
       OverallStatus,
       CreatedAt,
       LastChangedBy,

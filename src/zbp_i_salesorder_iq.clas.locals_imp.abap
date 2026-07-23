@@ -33,6 +33,20 @@ CLASS lhc_zi_salesorderitem_iq DEFINITION INHERITING FROM cl_abap_behavior_handl
 
     METHODS validate_delivery_date FOR VALIDATE ON SAVE
       IMPORTING keys FOR ZI_SalesOrderItem_IQ~validate_delivery_date.
+    METHODS ConfirmItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~ConfirmItem RESULT result.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR ZI_SalesOrderItem_IQ RESULT result.
+
+    METHODS get_instance_authorizations FOR INSTANCE AUTHORIZATION
+      IMPORTING keys REQUEST requested_authorizations FOR ZI_SalesOrderItem_IQ RESULT result.
+
+    METHODS CancelItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~CancelItem RESULT result.
+
+    METHODS DeliverItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~DeliverItem RESULT result.
+
 
 
 
@@ -160,7 +174,7 @@ CLASS lhc_zi_salesorderitem_iq IMPLEMENTATION.
   ENDMETHOD.
 
 
-METHOD calculateHeaderTotals.
+  METHOD calculateHeaderTotals.
 
     READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
       ENTITY ZI_SalesOrder_IQ
@@ -665,6 +679,129 @@ METHOD calculateHeaderTotals.
 
 
 
+
+  METHOD get_instance_features.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    FIELDS ( ItemStatus )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_items).
+
+  result = VALUE #(
+    FOR ls_item IN lt_items (
+
+      %tky = ls_item-%tky
+
+      %action-ConfirmItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'OP'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CancelItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'OP'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-DeliverItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'CO'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+    )
+  ).
+
+ENDMETHOD.
+
+  METHOD get_instance_authorizations.
+  ENDMETHOD.
+
+
+  METHOD ConfirmItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'CO'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+  METHOD CancelItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'CN'
+      )
+    ).
+
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+
+METHOD DeliverItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'DL'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
 ENDCLASS.
 
 
@@ -693,7 +830,20 @@ CLASS lhc_ZI_SalesOrder_IQ DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS validateDuplicateProduct FOR VALIDATE ON SAVE
       IMPORTING keys FOR ZI_SalesOrder_IQ~validateDuplicateProduct.
 
+    METHODS get_instance_features FOR INSTANCE FEATURES
+  IMPORTING keys REQUEST requested_features
+  FOR ZI_SalesOrder_IQ RESULT result.
+    METHODS cancelorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~cancelorder RESULT result.
 
+    METHODS completeorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~completeorder RESULT result.
+
+    METHODS rejectorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~rejectorder RESULT result.
+
+    METHODS releaseorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~releaseorder RESULT result.
 
 
 
@@ -1148,6 +1298,161 @@ CLASS lhc_ZI_SalesOrder_IQ IMPLEMENTATION.
 
 
 
+  METHOD get_instance_features.
 
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( OverallStatus )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_orders).
+
+  LOOP AT lt_orders INTO DATA(ls_order).
+
+    APPEND VALUE #(
+
+      %tky = ls_order-%tky
+
+      %action-ReleaseOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-RejectOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CancelOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+            OR ls_order-OverallStatus = 'RL'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CompleteOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'RL'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+    ) TO result.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+  METHOD CancelOrder.
+
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( OverallStatus )
+      WITH VALUE #(
+        FOR key IN keys (
+          %tky          = key-%tky
+          OverallStatus = 'CN'
+        )
+      ).
+
+
+        READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+  ENDMETHOD.
+
+
+  METHOD CompleteOrder.
+
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( OverallStatus )
+      WITH VALUE #(
+        FOR key IN keys (
+          %tky          = key-%tky
+          OverallStatus = 'CM'
+        )
+      ).
+
+
+        READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+  ENDMETHOD.
+
+
+METHOD RejectOrder.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    UPDATE FIELDS ( OverallStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky          = key-%tky
+        OverallStatus = 'RJ'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+METHOD ReleaseOrder.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    UPDATE FIELDS ( OverallStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky          = key-%tky
+        OverallStatus = 'RL'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls_result IN lt_result (
+      %tky   = ls_result-%tky
+      %param = ls_result
+    )
+  ).
+
+ENDMETHOD.
 
 ENDCLASS.
