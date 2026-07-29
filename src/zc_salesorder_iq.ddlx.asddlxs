@@ -12,16 +12,70 @@
 annotate entity ZC_SalesOrder_IQ with
 {
   @UI.facet: [{ purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'CustomerId',position: 10 },
-              { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 20},
-    { id: 'Orders', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Orders', position: 30 },
-    { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Items', position: 40, targetElement: '_Items' }
+              { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'CLUSD',position: 20 },
+              { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 30},
+    { id: 'Orders', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Orders', position: 40 },
+    { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Items', position: 50, targetElement: '_Items' }
   ]
 
   @UI.hidden: true
   OrderUuid;
+  
+  
+  @UI.lineItem: [
+  { position: 10, importance: #HIGH },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ReleaseOrder',
+    label: 'Release',
+    position: 100
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'RejectOrder',
+    label: 'Reject',
+    position: 110
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelOrder',
+    label: 'Cancel',
+    position: 120
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CompleteOrder',
+    label: 'Complete',
+    position: 130
+  }
+]
+@UI.identification: [
+  { position: 10 },
 
-  @UI.lineItem: [{ position: 10, importance: #HIGH }]
-  @UI.identification: [{ position: 10 }]
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ReleaseOrder',
+    label: 'Release'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'RejectOrder',
+    label: 'Reject'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelOrder',
+    label: 'Cancel'
+  },
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CompleteOrder',
+    label: 'Complete'
+  }
+]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Order ID'
   OrderId;
@@ -47,21 +101,27 @@ annotate entity ZC_SalesOrder_IQ with
 
   @UI.lineItem: [{ position: 50 }]
   @UI.identification: [{ position: 50 }]
-  @EndUserText.label: 'Net Amount'
+  @EndUserText.label: 'Net Amount (USD)'
   NetAmount;
 
   @UI.lineItem: [{ position: 60 }]
   @UI.identification: [{ position: 60 }]
-  @EndUserText.label: 'TAX Amount'
+  @EndUserText.label: 'TAX Amount (USD)'
   TaxAmount;
 
   @UI.lineItem: [{ position: 70 }]
   @UI.identification: [{ position: 70 }]
-  @EndUserText.label: 'Total Amount'
+  @EndUserText.label: 'Total Amount (USD)'
   TotalAmount;
+  
+  @EndUserText.label: 'Credit Limit (Customer Local)'
+  CreditLimit;
+  
+  @EndUserText.label: 'Credit Limit (USD)'
+  @UI.dataPoint:{qualifier: 'CLUSD',title: 'Credit Limit (USD)' }
+  CreditLimitUSD;
 
   @UI.lineItem: [{ position: 80 }]
-  @UI.identification: [{ position: 80 }]
   @EndUserText.label: 'Overall Status'
   @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
   OverallStatus;

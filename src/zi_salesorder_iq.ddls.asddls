@@ -20,6 +20,14 @@ define root view entity ZI_SalesOrder_IQ
       total_amount          as TotalAmount,
       overall_status        as OverallStatus,
 
+      @Semantics.amount.currencyCode: 'Currency'
+      credit_limit          as CreditLimit,
+
+      @Semantics.amount.currencyCode: 'USDCurrency'
+      credit_limit_usd      as CreditLimitUSD,
+
+      usd_currency          as USDCurrency,
+
       created_by            as CreatedBy,
       created_at            as CreatedAt,
       last_changed_by       as LastChangedBy,

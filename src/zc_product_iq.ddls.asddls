@@ -10,11 +10,7 @@ define root view entity ZC_Product_IQ
       @Semantics.amount.currencyCode: 'Currency'
       NetPrice,
 
-      @Consumption.valueHelpDefinition: [
-      {  entity: {
-      name: 'I_Currency',
-      element: 'Currency'
-      }} ]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZVH_CURRENCY', element: 'CurrencyCode' } }]
       Currency,
 
       @Consumption.valueHelpDefinition: [

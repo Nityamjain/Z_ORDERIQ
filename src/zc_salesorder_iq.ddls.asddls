@@ -26,15 +26,19 @@ define root view entity ZC_SalesOrder_IQ
         element: 'Currency'
       }} ]
       Currency,
-      @Semantics.amount.currencyCode: 'Currency'
+       @Semantics.amount.currencyCode: 'USDCurrency'
       NetAmount,
-      @Semantics.amount.currencyCode: 'Currency'
+       @Semantics.amount.currencyCode: 'USDCurrency'
       TaxAmount,
-      @Semantics.amount.currencyCode: 'Currency'
+       @Semantics.amount.currencyCode: 'USDCurrency'
       TotalAmount,
-
-
-      @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ORDER_STATUS' , element:'OrderStatus'}}]
+      @Semantics.amount.currencyCode: 'Currency'
+      CreditLimit,
+      
+      USDCurrency,
+      
+      @Semantics.amount.currencyCode: 'USDCurrency'
+      CreditLimitUSD,
       OverallStatus,
       CreatedAt,
       LastChangedBy,

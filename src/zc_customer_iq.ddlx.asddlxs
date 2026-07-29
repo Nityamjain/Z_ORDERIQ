@@ -9,12 +9,14 @@
   }
 }
 annotate entity ZC_Customer_IQ with
-{
+{   
+
+   
+   
    @UI.facet: [
     { id: 'Customer', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Customers', position: 10}
   ]
   
-  @UI.lineItem: [{ position: 10, importance: #HIGH }]
   @UI.identification: [{ position: 10 }]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Customer ID'
@@ -41,6 +43,10 @@ annotate entity ZC_Customer_IQ with
   @UI.identification: [{ position: 50 }]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Country'
+  @Consumption.valueHelpDefinition: [{
+  entity: { name: 'ZVH_COUNTRY', element: 'CountryCode' },
+  additionalBinding: [{ element: 'CountryName', localElement: 'Country', usage: #RESULT }]
+}]
   Country;
 
   @UI.lineItem: [{ position: 60}]

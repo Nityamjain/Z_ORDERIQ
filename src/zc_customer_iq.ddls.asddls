@@ -10,22 +10,8 @@ define root view entity ZC_Customer_IQ
       @Semantics.amount.currencyCode: 'Currency'
       CreditLimit,
 
-      @Consumption.valueHelpDefinition: [
-      {  entity: {
-      name: 'I_Currency',
-      element: 'Currency'
-      }} ]
+      
       Currency,
-
-      @Consumption.valueHelpDefinition: [
-      {
-      entity : {
-      name    : 'ZVH_Country',
-      element : 'Country'
-      }
-      }
-      ]
-
       Country,
       IsActive,
       LastChangedAt,

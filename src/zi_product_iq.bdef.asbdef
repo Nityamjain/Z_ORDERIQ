@@ -15,6 +15,7 @@ etag master LocalLastChangedAt
   update;
   delete;
   field ( readonly  ) ProductId;
+  field ( readonly : update ) ProductName , Currency , QuantityUnit;
 
    draft action Edit;
    draft action Resume;

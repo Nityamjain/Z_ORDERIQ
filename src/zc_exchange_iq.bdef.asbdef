@@ -2,7 +2,7 @@ projection;
 strict ( 2 );
 use draft;
 
-define behavior for ZC_Customer_IQ //alias <alias_name>
+define behavior for ZC_Exchange_iq //alias <alias_name>
 {
   use create;
   use update;
@@ -13,9 +13,4 @@ define behavior for ZC_Customer_IQ //alias <alias_name>
   use action Activate;
   use action Discard;
   use action Prepare;
-
-    side effects
-  {
-    field Country affects field Currency;
-  }
 }

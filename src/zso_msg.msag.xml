@@ -80,6 +80,36 @@
      <MSGNR>012</MSGNR>
      <TEXT>Product &amp;1 exists in multiple Items . Only one Item per Product Allowed</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>013</MSGNR>
+     <TEXT>Date range overlaps existing exchange rate</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>014</MSGNR>
+     <TEXT>Exchange rate must be greater than zero</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>015</MSGNR>
+     <TEXT>USD exchange rate must be 1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>016</MSGNR>
+     <TEXT>No exchange rate found for currency &amp;1 on &amp;2 (customer currency)</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSO_MSG</ARBGB>
+     <MSGNR>017</MSGNR>
+     <TEXT>No exchange rate found for item currency &amp;1 on &amp;2</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

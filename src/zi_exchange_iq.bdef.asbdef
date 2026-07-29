@@ -1,0 +1,87 @@
+managed implementation in class zbp_i_exchange_iq unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_Exchange_iq
+persistent table zso_exchange_r
+draft table zso_d_exchange_r
+
+lock master total etag ChangedAt
+authorization master ( instance )
+etag master ChangedAt
+{
+
+  create;
+  update;
+  delete;
+
+  field ( readonly : update )
+      CurrencyCode,
+      ValidFrom;
+
+  field ( readonly )
+      CreatedBy,
+      CreatedAt,
+      ChangedBy,
+      ChangedAt;
+
+  field ( mandatory )
+      ExchangeRate,
+      ValidTo;
+
+  determination SetDefaults
+    on modify { create; }
+
+   determination CheckOverlap
+  on modify { field ValidFrom, ValidTo; }
+
+
+  side effects {
+  field ValidFrom affects field ValidTo, messages;
+  field ValidTo   affects messages;
+}
+
+
+  validation ValidateCurrencyExists
+    on save { create; update; }
+
+  validation ValidateUSDRate
+    on save { create; update; }
+
+  validation ValidatePositiveRate
+    on save { create; update; }
+
+  validation ValidateDateRange
+    on save { create; update; }
+
+  validation ValidateOverlap
+    on save { create; update; }
+
+  draft action Edit;
+  draft action Resume;
+  draft action Activate;
+  draft action Discard;
+  draft determine action Prepare
+{
+  validation ValidateCurrencyExists;
+  validation ValidateUSDRate;
+  validation ValidatePositiveRate;
+  validation ValidateDateRange;
+  validation ValidateOverlap;
+}
+
+  mapping for zso_exchange_r
+  {
+    CurrencyCode = currency_code;
+    ValidFrom    = valid_from;
+    ExchangeRate = exchange_rate;
+    ValidTo      = valid_to;
+    IsActive     = is_active;
+
+    CreatedBy    = created_by;
+    CreatedAt    = created_at;
+    ChangedBy    = changed_by;
+    ChangedAt    = changed_at;
+  }
+
+}

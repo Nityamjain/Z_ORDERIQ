@@ -11,8 +11,9 @@
 annotate entity ZC_SalesOrderItem_IQ with
 {
 
-@UI.facet: [
-    { id: 'Items', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Items', position: 10}
+  @UI.facet: [{ purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'ProductId',position: 10 },
+              { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 20},
+    { id: 'Items', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Items', position: 30 }
   ]
 
 
@@ -22,9 +23,48 @@ annotate entity ZC_SalesOrderItem_IQ with
 
   @UI.hidden: true
   ItemUuid;
+@UI.lineItem: [
+  { position: 10, importance: #HIGH },
 
-  @UI.lineItem: [{ position: 10, importance: #HIGH }]
-  @UI.identification: [{ position: 10 }]
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ConfirmItem',
+    label: 'Confirm',
+    position: 200
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelItem',
+    label: 'Cancel',
+    position: 210
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'DeliverItem',
+    label: 'Deliver',
+    position: 220
+  }
+]
+@UI.identification: [
+  { position: 10},
+
+  {
+    type: #FOR_ACTION,
+    dataAction: 'ConfirmItem',
+    label: 'Confirm'
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'CancelItem',
+    label: 'Cancel'
+  },
+  {
+    type: #FOR_ACTION,
+    dataAction: 'DeliverItem',
+    label: 'Deliver'
+  }
+]
+
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Item Number'
   ItemNumber;
@@ -33,6 +73,7 @@ annotate entity ZC_SalesOrderItem_IQ with
   @UI.identification: [{ position: 20 }]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Product ID'
+  @UI.dataPoint:{qualifier: 'ProductId',title: 'Proudct ID' }
   ProductId;
 
   @UI.lineItem: [{ position: 30 }]
@@ -67,21 +108,29 @@ annotate entity ZC_SalesOrderItem_IQ with
 
   @UI.lineItem: [{ position: 85 }]
   @UI.identification: [{ position: 85 }]
-  @EndUserText.label: 'Currency'
+  @EndUserText.label: 'Local Currency '
   Currency;
-
+  
   @UI.lineItem: [{ position: 95 }]
   @UI.identification: [{ position: 95 }]
+  @EndUserText.label: 'Net Amount (USD)'
+  NetAmountUSD;
+
+  @UI.lineItem: [{ position: 105 }]
+  @UI.identification: [{ position: 105 }]
+  @EndUserText.label: 'Tax Amount (USD)'
+  TaxAmountUSD;
+  
+  @UI.lineItem: [{ position: 115}]
+  @UI.identification: [{ position: 115 }]
   @EndUserText.label: 'Requested Delivery Date'
   RequestedDeliveryDate;
   
 
-
-  @UI.lineItem: [{ position: 105}]
-  @UI.identification: [{ position: 105  }]
+  @UI.lineItem: [{ position: 125}]
   @EndUserText.label: 'Status'
-  @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ITEM_STATUS' , element:'ItemStatus'}}]
-   
+  @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
   ItemStatus;
+  
 
 }

@@ -9,10 +9,16 @@
     lock master total etag LastChangedAt
     authorization master ( instance )
     etag master LocalLastChangedAt
+
     {
       create ( authorization : global );
       update;
       delete;
+
+      action ( features : instance ) ReleaseOrder result [1] $self;
+      action ( features : instance ) RejectOrder result [1] $self;
+      action ( features : instance ) CancelOrder result [1] $self;
+      action ( features : instance ) CompleteOrder result [1] $self;
 
       draft action Edit;
       draft action Resume;
@@ -28,6 +34,7 @@
         validation ZI_SalesOrderItem_IQ~validateQuantity;
         validation ZI_SalesOrderItem_IQ~validate_delivery_date;
         validation validateDuplicateProduct;
+        validation validateExchangeRateAvailable;
 
 
       }
@@ -36,7 +43,7 @@
 
       side effects
       {
-        field CustomerId affects field OverallStatus, field OrderDate, field Currency;
+        field CustomerId affects field OverallStatus, field OrderDate, field Currency, field CreditLimit, field CreditLimitUSD;
 
       }
 
@@ -45,12 +52,17 @@
       determination setInitialOrderStatus on modify { create; }
       determination deriveOrderDate on modify { create; }
       determination deriveCustomerCurrency on modify { create; field CustomerId; }
+      determination deriveCustomerCreditLimitUSD on modify { create; field CustomerId, OrderDate; }
 
 
 
       validation validateCustomer on save { create; update; field CustomerId; }
       validation validateCreditLimit on save { create; update; }
-       validation validateDuplicateProduct on save { create; update;}
+      validation validateDuplicateProduct on save { create; update; }
+
+      validation validateExchangeRateAvailable on save { create; update; field OrderDate, CustomerId; }
+
+
 
 
 
@@ -60,9 +72,8 @@
 
 
       field ( readonly, numbering : managed ) OrderUuid;
-      field ( readonly ) OrderId, Currency;
-      field ( mandatory ) CustomerId, OrderDate, OverallStatus;
-      field ( readonly ) NetAmount, TaxAmount, TotalAmount;
+      field ( readonly ) NetAmount, TaxAmount, OverallStatus, TotalAmount, CreditLimit, CreditLimitUSD, USDCurrency,Currency;
+      field ( mandatory ) CustomerId, OrderDate;
       association _Items { create; with draft; }
 
       mapping for zso_header_iq corresponding
@@ -75,6 +86,9 @@
           NetAmount          = net_amount;
           TaxAmount          = tax_amount;
           TotalAmount        = total_amount;
+          CreditLimit        = credit_limit;
+          CreditLimitUSD     = credit_limit_usd;
+          USDCurrency        = usd_currency;
           OverallStatus      = overall_status;
           CreatedBy          = created_by;
           CreatedAt          = created_at;
@@ -93,10 +107,16 @@
     {
       update;
       delete;
-      field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetPrice, TaxCode, QuantityUnit, Currency;
-      field ( mandatory ) ProductId, OrderQuantity, ItemStatus;
+      field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetAmountUSD, TaxAmountUSD,
+      NetPrice, TaxCode, QuantityUnit, Currency, USDCurrency, ItemStatus;
+      field ( mandatory ) ProductId, OrderQuantity;
       field ( readonly, numbering : managed ) ItemUuid;
-      association _SalesOrder{with draft;}
+      association _SalesOrder { with draft; }
+
+
+      action ( features : instance ) ConfirmItem result [1] $self;
+      action ( features : instance ) CancelItem result [1] $self;
+      action ( features : instance ) DeliverItem result [1] $self;
 
 
       side effects
@@ -106,6 +126,8 @@
         affects field RequestedDeliveryDate,
             field NetAmount,
             field TaxAmount,
+            field NetAmountUSD,
+            field TaxAmountUSD,
             field NetPrice,
             field TaxCode,
             field Currency,
@@ -115,6 +137,8 @@
         field OrderQuantity
         affects field NetAmount,
             field TaxAmount,
+            field NetAmountUSD,
+            field TaxAmountUSD,
             entity _SalesOrder;
 
 
@@ -123,11 +147,13 @@
 
       determination calculateItemAmount on modify { create; field OrderQuantity, ProductId; }
       determination calculateItemTax on modify { create; field ProductId, NetAmount; }
-      determination calculateHeaderTotals on modify { create; update; delete; field NetAmount, TaxAmount, NetPrice; }
+      determination calculateHeaderTotals on modify { create; update; delete; field NetAmountUSD, TaxAmountUSD, NetPrice; }
       determination deriveProductData on modify { create; field ProductId; }
       determination deriveDeliveryDate on modify { create; }
       determination setInitialItemStatus on modify { create; }
       determination determineItemNumber on modify { create; }
+
+      determination convertItemAmountToUSD on modify { create; field NetAmount, TaxAmount; }
 
 
 
@@ -135,9 +161,7 @@
       validation validateProduct on save { create; update; field ProductId; }
       validation validateStock on save { create; update; field OrderQuantity; }
       validation validateQuantity on save { create; update; field OrderQuantity; }
-      validation validate_delivery_date on save { create; update;field RequestedDeliveryDate; }
-
-
+      validation validate_delivery_date on save { create; update; field RequestedDeliveryDate; }
 
 
 
@@ -156,6 +180,9 @@
           TaxCode               = tax_code;
           TaxAmount             = tax_amount;
           Currency              = currency;
+          NetAmountUSD          = net_amount_usd;
+          TaxAmountUSD          = tax_amount_usd;
+          USDCurrency           = usd_currency;
           RequestedDeliveryDate = requested_delivery_date;
           ItemStatus            = item_status;
           LocalLastChangedAt    = local_last_changed_at;

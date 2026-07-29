@@ -1,0 +1,93 @@
+@Metadata.layer: #CORE
+@Search.searchable: true
+
+@UI: {
+  headerInfo: {
+    typeName: 'USD Exchange Rate',
+    typeNamePlural: 'USD Exchange Rates',
+    title: {
+      type: #STANDARD,
+      value: 'CurrencyCode'
+    }
+  }
+}
+
+annotate entity ZC_Exchange_iq with
+{
+
+  @UI.facet: [
+    {
+      id: 'ExchangeInformation',
+      type: #IDENTIFICATION_REFERENCE,
+      purpose: #STANDARD,
+      label: 'Base Currency = USD ',
+      position: 10
+    }
+  ]
+
+  @UI.lineItem: [
+    { position: 10, importance: #HIGH }
+  ]
+  @UI.identification: [
+    { position: 10 }
+  ]
+  @Search.defaultSearchElement: true
+  @EndUserText.label: 'Currency'
+  @Consumption.valueHelpDefinition: [{
+  entity: {
+    name    : 'ZVH_CURRENCY',
+    element : 'CurrencyCode'
+  }
+  }]
+
+  CurrencyCode;
+
+  @UI.lineItem: [
+    { position: 20, importance: #HIGH }
+  ]
+  @UI.identification: [
+    { position: 20 }
+  ]
+  @EndUserText.label: 'Exchange Rate Against USD (1 USD = ?)'
+  ExchangeRate;
+
+  @UI.lineItem: [
+    { position: 30 }
+  ]
+  @UI.identification: [
+    { position: 30 }
+  ]
+  @EndUserText.label: 'Valid From'
+  ValidFrom;
+
+  @UI.lineItem: [
+    { position: 40 }
+  ]
+  @UI.identification: [
+    { position: 40 }
+  ]
+  @EndUserText.label: 'Valid To'
+  ValidTo;
+
+  @UI.lineItem: [
+    { position: 50 }
+  ]
+  @UI.identification: [
+    { position: 50 }
+  ]
+  @EndUserText.label: 'Active'
+  IsActive;
+
+  @UI.hidden: true
+  CreatedBy;
+
+  @UI.hidden: true
+  CreatedAt;
+
+  @UI.hidden: true
+  ChangedBy;
+
+  @UI.hidden: true
+  ChangedAt;
+
+}

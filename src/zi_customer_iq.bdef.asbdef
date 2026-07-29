@@ -15,6 +15,8 @@ etag master LocalLastChangedAt
   update;
   delete;
   field ( readonly ) CustomerId;
+  field (readonly : update) CustomerName,Country;
+  field(readonly) Currency;
 
   draft action Edit;
   draft action Resume;
@@ -22,6 +24,7 @@ etag master LocalLastChangedAt
   draft action Discard;
   draft determine action Prepare;
 
+ determination setCurrency on modify { field Country; }
 
   mapping for zcustomer_mstr corresponding
     {

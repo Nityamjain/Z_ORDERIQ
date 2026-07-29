@@ -37,12 +37,13 @@ define view entity ZC_SalesOrderItem_IQ
       @Semantics.amount.currencyCode: 'Currency'
       TaxAmount,
 
-      @Consumption.valueHelpDefinition: [
-      {  entity: {
-      name: 'I_Currency',
-      element: 'Currency'
-      }} ]
       Currency,
+      USDCurrency,
+       @Semantics.amount.currencyCode: 'USDCurrency'
+      NetAmountUSD,
+      @Semantics.amount.currencyCode: 'USDCurrency'
+      TaxAmountUSD, 
+      
       RequestedDeliveryDate,
 
       @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ITEM_STATUS' , element:'ItemStatus'}}]

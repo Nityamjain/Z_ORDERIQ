@@ -5,8 +5,8 @@ define view entity ZI_SalesOrderItem_IQ
   as select from zso_item_iq
   association        to parent ZI_SalesOrder_IQ as _SalesOrder on $projection.OrderUuid = _SalesOrder.OrderUuid
   association [0..1] to ZI_Product_IQ           as _Product    on $projection.ProductId = _Product.ProductId
-  
-  
+
+
 {
   key order_uuid              as OrderUuid,
   key item_uuid               as ItemUuid,
@@ -25,6 +25,11 @@ define view entity ZI_SalesOrderItem_IQ
       currency                as Currency,
       requested_delivery_date as RequestedDeliveryDate,
       item_status             as ItemStatus,
+      @Semantics.amount.currencyCode: 'USDCurrency'
+      net_amount_usd          as NetAmountUSD,
+      @Semantics.amount.currencyCode: 'USDCurrency'
+      tax_amount_usd          as TaxAmountUSD,
+      usd_currency            as USDCurrency,
       local_last_changed_at   as LocalLastChangedAt,
       _SalesOrder,
       _Product

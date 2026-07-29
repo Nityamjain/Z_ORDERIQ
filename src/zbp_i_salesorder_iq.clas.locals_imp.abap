@@ -33,7 +33,21 @@ CLASS lhc_zi_salesorderitem_iq DEFINITION INHERITING FROM cl_abap_behavior_handl
 
     METHODS validate_delivery_date FOR VALIDATE ON SAVE
       IMPORTING keys FOR ZI_SalesOrderItem_IQ~validate_delivery_date.
+    METHODS ConfirmItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~ConfirmItem RESULT result.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR ZI_SalesOrderItem_IQ RESULT result.
 
+    METHODS get_instance_authorizations FOR INSTANCE AUTHORIZATION
+      IMPORTING keys REQUEST requested_authorizations FOR ZI_SalesOrderItem_IQ RESULT result.
+
+    METHODS CancelItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~CancelItem RESULT result.
+
+    METHODS DeliverItem FOR MODIFY
+      IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~DeliverItem RESULT result.
+    METHODS convertItemAmountToUSD FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR ZI_SalesOrderItem_IQ~convertItemAmountToUSD.
 
 
 
@@ -160,96 +174,55 @@ CLASS lhc_zi_salesorderitem_iq IMPLEMENTATION.
   ENDMETHOD.
 
 
-METHOD calculateHeaderTotals.
+  METHOD calculateHeaderTotals.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( OrderId )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_header).
+
+  DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrder_IQ.
+
+  LOOP AT lt_header INTO DATA(ls_header).
+
+    DATA lv_netamt TYPE zde_net_amount.
+    DATA lv_taxamt TYPE zde_tax_amount.
+    DATA lv_totalamt TYPE zde_total_amount_10.
+
+    CLEAR: lv_netamt, lv_taxamt, lv_totalamt.
 
     READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
-      ENTITY ZI_SalesOrder_IQ
-      FIELDS ( OrderId Currency OrderDate )
-      WITH CORRESPONDING #( keys )
-      RESULT DATA(lt_header).
+      ENTITY ZI_SalesOrder_IQ BY \_Items
+      FIELDS ( NetAmountUSD TaxAmountUSD )
+      WITH VALUE #( ( %tky = ls_header-%tky ) )
+      RESULT DATA(lt_items).
 
-    DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrder_IQ.
-
-    LOOP AT lt_header INTO DATA(ls_header).
-
-      DATA: lv_netamt   TYPE zde_net_amount,
-            lv_taxamt   TYPE zde_tax_amount,
-            lv_totalamt TYPE zde_total_amount.
-
-      CLEAR: lv_netamt, lv_taxamt, lv_totalamt.
-
-      READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
-        ENTITY ZI_SalesOrder_IQ BY \_Items
-        FIELDS ( NetAmount TaxAmount Currency )
-        WITH VALUE #( ( %tky = ls_header-%tky ) )
-        RESULT DATA(lt_items).
-
-      LOOP AT lt_items INTO DATA(ls_item).
-
-        DATA lv_conv_net TYPE zde_net_amount.
-        DATA lv_conv_tax TYPE zde_tax_amount.
-
-        CLEAR: lv_conv_net, lv_conv_tax.
-
-        IF ls_item-Currency IS INITIAL
-           OR ls_header-Currency IS INITIAL
-           OR ls_item-Currency = ls_header-Currency.
-
-          lv_conv_net = ls_item-NetAmount.
-          lv_conv_tax = ls_item-TaxAmount.
-
-        ELSE.
-
-          " Convert Net Amount using Cloud-released API
-          TRY.
-
-
-            CATCH cx_exchange_rates.
-              lv_conv_net = ls_item-NetAmount. " Fallback if conversion fails
-          ENDTRY.
-
-          " Convert Tax Amount using Cloud-released API
-          TRY.
-              cl_exchange_rates=>convert_to_local_currency(
-                EXPORTING
-                  date             = ls_header-OrderDate
-                  foreign_amount   = ls_item-TaxAmount
-                  foreign_currency = ls_item-Currency
-                  local_currency   = ls_header-Currency
-                IMPORTING
-                  local_amount     = lv_conv_tax
-              ).
-            CATCH cx_exchange_rates.
-              lv_conv_tax = ls_item-TaxAmount. " Fallback if conversion fails
-          ENDTRY.
-
-        ENDIF.
-
-        lv_netamt += lv_conv_net.
-        lv_taxamt += lv_conv_tax.
-
-      ENDLOOP.
-
-      lv_totalamt = lv_netamt + lv_taxamt.
-
-      APPEND VALUE #(
-        %tky        = ls_header-%tky
-        NetAmount   = lv_netamt
-        TaxAmount   = lv_taxamt
-        TotalAmount = lv_totalamt
-      ) TO lt_update.
-
+    LOOP AT lt_items INTO DATA(ls_item).
+      lv_netamt += ls_item-NetAmountUSD.
+      lv_taxamt += ls_item-TaxAmountUSD.
     ENDLOOP.
 
-    IF lt_update IS NOT INITIAL.
-      MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
-        ENTITY ZI_SalesOrder_IQ
-        UPDATE FIELDS ( NetAmount TaxAmount TotalAmount )
-        WITH lt_update.
-    ENDIF.
+    lv_totalamt = lv_netamt + lv_taxamt.
 
-  ENDMETHOD.
+    APPEND VALUE #(
+      %tky        = ls_header-%tky
+      NetAmount   = lv_netamt
+      TaxAmount   = lv_taxamt
+      TotalAmount = lv_totalamt
+      USDCurrency = 'USD'
+    ) TO lt_update.
 
+  ENDLOOP.
+
+  IF lt_update IS NOT INITIAL.
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( NetAmount TaxAmount TotalAmount USDCurrency )
+      WITH lt_update.
+  ENDIF.
+
+ENDMETHOD.
   METHOD deriveProductData.
 
     READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
@@ -665,6 +638,205 @@ METHOD calculateHeaderTotals.
 
 
 
+
+  METHOD get_instance_features.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    FIELDS ( ItemStatus )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_items).
+
+  result = VALUE #(
+    FOR ls_item IN lt_items (
+
+      %tky = ls_item-%tky
+
+      %action-ConfirmItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'OP'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CancelItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'OP'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-DeliverItem =
+        COND #(
+          WHEN ls_item-ItemStatus = 'CO'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+    )
+  ).
+
+ENDMETHOD.
+
+  METHOD get_instance_authorizations.
+  ENDMETHOD.
+
+
+  METHOD ConfirmItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'CO'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+  METHOD CancelItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'CN'
+      )
+    ).
+
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+
+METHOD DeliverItem.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    UPDATE FIELDS ( ItemStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky       = key-%tky
+        ItemStatus = 'DL'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+
+  METHOD convertItemAmountToUSD.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    FIELDS ( NetAmount TaxAmount Currency OrderUuid )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_items).
+
+  DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrderItem_IQ.
+
+  LOOP AT lt_items INTO DATA(ls_item).
+
+    " Get OrderDate from the parent header
+    READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      FIELDS ( OrderDate )
+      WITH VALUE #( ( OrderUuid = ls_item-OrderUuid ) )
+      RESULT DATA(lt_header).
+
+    READ TABLE lt_header INTO DATA(ls_header) INDEX 1.
+
+    IF sy-subrc <> 0 OR ls_header-OrderDate IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    DATA lv_net_usd TYPE zde_net_amount.
+    DATA lv_tax_usd TYPE zde_tax_amount.
+    CLEAR: lv_net_usd, lv_tax_usd.
+
+    " If item currency is already USD, no conversion needed
+    IF ls_item-Currency = 'USD'.
+
+      lv_net_usd = ls_item-NetAmount.
+      lv_tax_usd = ls_item-TaxAmount.
+
+    ELSE.
+
+      " Direct lookup from own exchange rate table - no FM, no cloud API
+      SELECT SINGLE exchange_rate
+        FROM zso_exchange_r
+        WHERE currency_code = @ls_item-Currency
+          AND is_active     = @abap_true
+          AND valid_from   <= @ls_header-OrderDate
+          AND valid_to     >= @ls_header-OrderDate
+        INTO @DATA(lv_rate).
+
+      IF sy-subrc = 0 AND lv_rate > 0.
+        lv_net_usd = ls_item-NetAmount / lv_rate.
+        lv_tax_usd = ls_item-TaxAmount / lv_rate.
+      ELSE.
+        lv_net_usd = 0.   " no valid rate found for that date
+        lv_tax_usd = 0.
+      ENDIF.
+
+    ENDIF.
+
+    APPEND VALUE #(
+      %tky         = ls_item-%tky
+      NetAmountUSD = lv_net_usd
+      TaxAmountUSD = lv_tax_usd
+      USDCurrency  = 'USD'
+    ) TO lt_update.
+
+  ENDLOOP.
+
+  IF lt_update IS NOT INITIAL.
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrderItem_IQ
+      UPDATE FIELDS ( NetAmountUSD TaxAmountUSD USDCurrency )
+      WITH lt_update.
+  ENDIF.
+
+ENDMETHOD.
+
 ENDCLASS.
 
 
@@ -693,7 +865,24 @@ CLASS lhc_ZI_SalesOrder_IQ DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS validateDuplicateProduct FOR VALIDATE ON SAVE
       IMPORTING keys FOR ZI_SalesOrder_IQ~validateDuplicateProduct.
 
+    METHODS get_instance_features FOR INSTANCE FEATURES
+  IMPORTING keys REQUEST requested_features
+  FOR ZI_SalesOrder_IQ RESULT result.
+    METHODS cancelorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~cancelorder RESULT result.
 
+    METHODS completeorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~completeorder RESULT result.
+
+    METHODS rejectorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~rejectorder RESULT result.
+
+    METHODS releaseorder FOR MODIFY
+      IMPORTING keys FOR ACTION zi_salesorder_iq~releaseorder RESULT result.
+    METHODS validateexchangerateavailable FOR VALIDATE ON SAVE
+      IMPORTING keys FOR zi_salesorder_iq~validateexchangerateavailable.
+    METHODS derivecustomercreditlimitusd FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR zi_salesorder_iq~derivecustomercreditlimitusd.
 
 
 
@@ -989,93 +1178,90 @@ CLASS lhc_ZI_SalesOrder_IQ IMPLEMENTATION.
 
   METHOD validateCreditLimit.
 
-    READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
-      ENTITY ZI_SalesOrder_IQ
-      FIELDS (
-        CustomerId
-        OrderId
-        TotalAmount
-      )
-      WITH CORRESPONDING #( keys )
-      RESULT DATA(lt_orders).
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS (
+      CustomerId
+      OrderId
+      TotalAmount
+      CreditLimitUSD
+    )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_orders).
 
-    LOOP AT lt_orders INTO DATA(ls_order).
+  LOOP AT lt_orders INTO DATA(ls_order).
 
-      DATA: lv_credit_limit      TYPE zde_credit_limit,
-            lv_open_orders_total TYPE zde_total_amount_10,
-            lv_total_exposure    TYPE zde_total_amount_10,
-            lv_excess_amount     TYPE zde_total_amount_10.
+    DATA: lv_credit_limit_usd  TYPE zde_credit_limit,
+          lv_open_orders_total TYPE zde_total_amount_10,
+          lv_total_exposure    TYPE zde_total_amount_10,
+          lv_excess_amount     TYPE zde_total_amount_10.
 
-      CLEAR:
-        lv_credit_limit,
-        lv_open_orders_total,
-        lv_total_exposure,
-        lv_excess_amount.
+    CLEAR:
+      lv_credit_limit_usd,
+      lv_open_orders_total,
+      lv_total_exposure,
+      lv_excess_amount.
 
-      " Ignore incomplete drafts
-      IF ls_order-CustomerId IS INITIAL
-         OR ls_order-TotalAmount IS INITIAL.
-        CONTINUE.
-      ENDIF.
+    " Ignore incomplete drafts
+    IF ls_order-CustomerId IS INITIAL
+       OR ls_order-TotalAmount IS INITIAL.
+      CONTINUE.
+    ENDIF.
 
-      " Get credit limit
-      SELECT SINGLE credit_limit
-        FROM zcustomer_mstr
-        WHERE customer_id = @ls_order-CustomerId
-        INTO @lv_credit_limit.
+    " Credit limit already converted and stored on header (set by deriveCustomerCreditLimitUSD)
+    lv_credit_limit_usd = ls_order-CreditLimitUSD.
 
-      IF sy-subrc <> 0.
-        CONTINUE.
-      ENDIF.
+    IF lv_credit_limit_usd IS INITIAL.
+      CONTINUE.  " limit not yet derived - avoid false positive
+    ENDIF.
 
-      " Sum active orders of same customer
-      " Exclude current order
-      SELECT total_amount
-        FROM zso_header_iq
-        WHERE customer_id    = @ls_order-CustomerId
-          AND overall_status <> 'CN'
-          AND order_id       <> @ls_order-OrderId
-        INTO TABLE @DATA(lt_amounts).
+    " Sum active orders of same customer (USD totals), exclude current order
+    SELECT total_amount
+      FROM zso_header_iq
+      WHERE customer_id    = @ls_order-CustomerId
+        AND overall_status <> 'CN'
+        AND order_id       <> @ls_order-OrderId
+      INTO TABLE @DATA(lt_amounts).
 
-      LOOP AT lt_amounts INTO DATA(ls_amount).
+    LOOP AT lt_amounts INTO DATA(ls_amount).
 
-        lv_open_orders_total =
-          lv_open_orders_total +
-          ls_amount-total_amount.
-
-      ENDLOOP.
-
-      " Current Draft Order + Existing Orders
-      lv_total_exposure =
+      lv_open_orders_total =
         lv_open_orders_total +
-        ls_order-TotalAmount.
-
-      IF lv_total_exposure > lv_credit_limit.
-
-        lv_excess_amount =
-          lv_total_exposure -
-          lv_credit_limit.
-
-        APPEND VALUE #(
-          %tky = ls_order-%tky
-        ) TO failed-zi_salesorder_iq.
-
-        APPEND VALUE #(
-          %tky = ls_order-%tky
-          %msg = new_message(
-                   id       = 'ZSO_MSG'
-                   number   = '003'
-                   severity = if_abap_behv_message=>severity-error
-                   v1       = CONV string( ls_order-CustomerId )
-                   v2       = CONV string( lv_credit_limit )
-                   v3       = CONV string( lv_excess_amount ) )
-        ) TO reported-zi_salesorder_iq.
-
-      ENDIF.
+        ls_amount-total_amount.
 
     ENDLOOP.
 
-  ENDMETHOD.
+    " Current Draft Order + Existing Orders (all in USD)
+    lv_total_exposure =
+      lv_open_orders_total +
+      ls_order-TotalAmount.
+
+    IF lv_total_exposure > lv_credit_limit_usd.
+
+      lv_excess_amount =
+        lv_total_exposure -
+        lv_credit_limit_usd.
+
+      APPEND VALUE #(
+        %tky = ls_order-%tky
+      ) TO failed-zi_salesorder_iq.
+
+      APPEND VALUE #(
+        %tky = ls_order-%tky
+        %msg = new_message(
+                 id       = 'ZSO_MSG'
+                 number   = '003'
+                 severity = if_abap_behv_message=>severity-error
+                 v1       = CONV string( ls_order-CustomerId )
+                 v2       = CONV string( lv_credit_limit_usd )
+                 v3       = CONV string( lv_excess_amount ) )
+      ) TO reported-zi_salesorder_iq.
+
+    ENDIF.
+
+  ENDLOOP.
+
+ENDMETHOD.
 
   METHOD validateDuplicateProduct.
 
@@ -1148,6 +1334,327 @@ CLASS lhc_ZI_SalesOrder_IQ IMPLEMENTATION.
 
 
 
+  METHOD get_instance_features.
 
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( OverallStatus )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_orders).
+
+  LOOP AT lt_orders INTO DATA(ls_order).
+
+    APPEND VALUE #(
+
+      %tky = ls_order-%tky
+
+      %action-ReleaseOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-RejectOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CancelOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'NW'
+            OR ls_order-OverallStatus = 'RL'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+      %action-CompleteOrder =
+        COND #(
+          WHEN ls_order-OverallStatus = 'RL'
+          THEN if_abap_behv=>fc-o-enabled
+          ELSE if_abap_behv=>fc-o-disabled )
+
+    ) TO result.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+  METHOD CancelOrder.
+
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( OverallStatus )
+      WITH VALUE #(
+        FOR key IN keys (
+          %tky          = key-%tky
+          OverallStatus = 'CN'
+        )
+      ).
+
+
+        READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+  ENDMETHOD.
+
+
+  METHOD CompleteOrder.
+
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( OverallStatus )
+      WITH VALUE #(
+        FOR key IN keys (
+          %tky          = key-%tky
+          OverallStatus = 'CM'
+        )
+      ).
+
+
+        READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+  ENDMETHOD.
+
+
+METHOD RejectOrder.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    UPDATE FIELDS ( OverallStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky          = key-%tky
+        OverallStatus = 'RJ'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls IN lt_result (
+      %tky   = ls-%tky
+      %param = ls
+    )
+  ).
+
+ENDMETHOD.
+
+METHOD ReleaseOrder.
+
+  MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    UPDATE FIELDS ( OverallStatus )
+    WITH VALUE #(
+      FOR key IN keys (
+        %tky          = key-%tky
+        OverallStatus = 'RL'
+      )
+    ).
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    ALL FIELDS
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_result).
+
+  result = VALUE #(
+    FOR ls_result IN lt_result (
+      %tky   = ls_result-%tky
+      %param = ls_result
+    )
+  ).
+
+ENDMETHOD.
+
+  METHOD validateExchangeRateAvailable.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( OrderDate CustomerId )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_orders).
+
+  LOOP AT lt_orders INTO DATA(ls_order).
+
+    IF ls_order-OrderDate IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    " 1. Check customer's own currency has a valid rate on OrderDate
+    IF ls_order-CustomerId IS NOT INITIAL.
+
+      SELECT SINGLE currency
+        FROM zcustomer_mstr
+        WHERE customer_id = @ls_order-CustomerId
+        INTO @DATA(lv_cust_currency).
+
+      IF sy-subrc = 0 AND lv_cust_currency <> 'USD'.
+
+        SELECT SINGLE @abap_true
+          FROM zso_exchange_r
+          WHERE currency_code = @lv_cust_currency
+            AND is_active     = @abap_true
+            AND valid_from   <= @ls_order-OrderDate
+            AND valid_to     >= @ls_order-OrderDate
+          INTO @DATA(lv_rate_exists).
+
+        IF lv_rate_exists IS INITIAL.
+
+          APPEND VALUE #( %tky = ls_order-%tky ) TO failed-zi_salesorder_iq.
+
+          APPEND VALUE #(
+            %tky = ls_order-%tky
+            %msg = new_message(
+                     id       = 'ZSO_MSG'
+                     number   = '016'
+                     severity = if_abap_behv_message=>severity-error
+                     v1       = lv_cust_currency
+                     v2       = |{ ls_order-OrderDate DATE = USER }| )
+          ) TO reported-zi_salesorder_iq.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+    " 2. Check every item's currency has a valid rate on OrderDate
+    READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ BY \_Items
+      FIELDS ( Currency )
+      WITH VALUE #( ( %tky = ls_order-%tky ) )
+      RESULT DATA(lt_items).
+
+    LOOP AT lt_items INTO DATA(ls_item).
+
+      IF ls_item-Currency IS INITIAL OR ls_item-Currency = 'USD'.
+        CONTINUE.
+      ENDIF.
+
+      SELECT SINGLE @abap_true
+        FROM zso_exchange_r
+        WHERE currency_code = @ls_item-Currency
+          AND is_active     = @abap_true
+          AND valid_from   <= @ls_order-OrderDate
+          AND valid_to     >= @ls_order-OrderDate
+        INTO @DATA(lv_item_rate_exists).
+
+      IF lv_item_rate_exists IS INITIAL.
+
+        APPEND VALUE #( %tky = ls_order-%tky ) TO failed-zi_salesorder_iq.
+
+        APPEND VALUE #(
+          %tky = ls_order-%tky
+          %msg = new_message(
+                   id       = 'ZSO_MSG'
+                   number   = '017'
+                   severity = if_abap_behv_message=>severity-error
+                   v1       = ls_item-Currency
+                   v2       = |{ ls_order-OrderDate DATE = USER }| )
+        ) TO reported-zi_salesorder_iq.
+
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+METHOD deriveCustomerCreditLimitUSD.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( CustomerId OrderDate CreditLimit CreditLimitUSD )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_orders).
+
+  DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrder_IQ.
+
+  LOOP AT lt_orders INTO DATA(ls_order).
+
+    IF ls_order-CustomerId IS INITIAL OR ls_order-OrderDate IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    " Get customer's native credit limit and currency
+    SELECT SINGLE credit_limit, currency
+      FROM zcustomer_mstr
+      WHERE customer_id = @ls_order-CustomerId
+      INTO @DATA(ls_customer).
+
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    DATA lv_credit_limit_usd TYPE zde_credit_limit.
+    CLEAR lv_credit_limit_usd.
+
+    " If customer currency is already USD, no conversion needed
+    IF ls_customer-currency = 'USD'.
+
+      lv_credit_limit_usd = ls_customer-credit_limit.
+
+    ELSE.
+
+      " Direct lookup from own exchange rate table - no FM, no cloud API
+      SELECT SINGLE exchange_rate
+        FROM zso_exchange_r
+        WHERE currency_code = @ls_customer-currency
+          AND is_active     = @abap_true
+          AND valid_from   <= @ls_order-OrderDate
+          AND valid_to     >= @ls_order-OrderDate
+        INTO @DATA(lv_rate).
+
+      IF sy-subrc = 0 AND lv_rate > 0.
+        lv_credit_limit_usd = ls_customer-credit_limit / lv_rate.
+      ELSE.
+        lv_credit_limit_usd = 0.   " no valid rate found for that date
+      ENDIF.
+
+    ENDIF.
+
+    APPEND VALUE #(
+      %tky           = ls_order-%tky
+      CreditLimit    = ls_customer-credit_limit
+      CreditLimitUSD = lv_credit_limit_usd
+      USDCurrency    = 'USD'
+    ) TO lt_update.
+
+  ENDLOOP.
+
+  IF lt_update IS NOT INITIAL.
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( CreditLimit CreditLimitUSD USDCurrency )
+      WITH lt_update.
+  ENDIF.
+
+ENDMETHOD.
 
 ENDCLASS.

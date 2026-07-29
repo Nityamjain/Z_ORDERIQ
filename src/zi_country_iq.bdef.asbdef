@@ -1,0 +1,40 @@
+managed implementation in class zbp_i_country_iq unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_Country_iq //alias <alias_name>
+persistent table zso_country
+draft table zso_d_country
+lock master total etag ChangedAt
+authorization master ( instance )
+etag master ChangedAt
+{
+  create ;
+  update;
+  delete;
+  field ( readonly:update ) CountryCode;
+  field (readonly) CountryName ;
+  field (mandatory:create)CurrencyCode;
+
+   draft action Edit;
+  draft action Resume;
+  draft action Activate;
+  draft action Discard;
+  draft determine action Prepare;
+
+
+ determination DeriveCountryName
+  on modify { create; field CountryCode; }
+
+
+  mapping for zso_country corresponding {
+    CountryCode = country_code;
+    CountryName = country_name ;
+    CurrencyCode = currency_code;
+    IsActive = is_active;
+    CreatedBy = created_by;
+    CreatedAt = created_at;
+    ChangedBy = changed_by;
+    ChangedAt = changed_at;
+  }
+}
