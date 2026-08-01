@@ -80,7 +80,7 @@ This mirrors a real enterprise requirement: **global order visibility in a singl
 - Service Binding: `ZUI_ORDERIQ_O4_UI` (OData V4, UI)
 - Message Class: `ZSO_MSG`
 
-*(Full technical schema with fields, domains, and data elements is available in the [Object Schema](#) document / see repo.)*
+*(Full technical schema with fields, domains, and data elements is available in the [Object Schema](OBJECT_SCHEMA.md) document / see repo.)*
 
 ---
 
@@ -175,4 +175,4 @@ Built by Nityam Jain as a hands-on learning project to master SAP RAP — Determ
 
 This project is shared publicly for portfolio and demonstration purposes only. The code, documentation, and associated materials may **not** be copied, modified, distributed, or used — in whole or in part — for personal, academic, or commercial purposes without **prior written permission** from the author.
 
-If you'd like to use, reference, or build upon this project, please reach out via [LinkedIn](#) or [email](#) to request permission.
+If you'd like to use, reference, or build upon this project, please reach out via [LinkedIn](www.linkedin.com/in/nityamjain36) or [email](nityamjain36@gmail.com) to request permission.
