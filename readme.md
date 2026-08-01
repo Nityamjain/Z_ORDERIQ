@@ -168,3 +168,11 @@ This mirrors a real enterprise requirement: **global order visibility in a singl
 ## 👤 Author
 
 Built by Nityam Jain as a hands-on learning project to master SAP RAP — Determinations, Validations, Actions, and multi-currency business scenarios — on SAP BTP.
+
+## 📄 License
+
+**© 2026 Nityam Jain. All Rights Reserved.**
+
+This project is shared publicly for portfolio and demonstration purposes only. The code, documentation, and associated materials may **not** be copied, modified, distributed, or used — in whole or in part — for personal, academic, or commercial purposes without **prior written permission** from the author.
+
+If you'd like to use, reference, or build upon this project, please reach out via [LinkedIn](#) or [email](#) to request permission.
