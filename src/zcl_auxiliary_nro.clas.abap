@@ -21,8 +21,8 @@ ENDCLASS.
 
 CLASS zcl_auxiliary_nro IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
-*    create_number_range( out ).
-    draw_number( out ).
+    create_number_range( out ).
+*    draw_number( out ).
   ENDMETHOD.
 
   METHOD create_number_range.

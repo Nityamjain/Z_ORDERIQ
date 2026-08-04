@@ -4,6 +4,7 @@
   headerInfo: {
     typeName: 'Customer',
     typeNamePlural: 'Customers',
+    typeImageUrl: 'sap-icon://customer',
     title: { type: #STANDARD, value: 'CustomerName' },
     description: { type: #STANDARD, value: 'CustomerId' }
   }

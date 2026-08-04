@@ -40,6 +40,7 @@ define root view entity ZC_SalesOrder_IQ
       @Semantics.amount.currencyCode: 'USDCurrency'
       CreditLimitUSD,
       OverallStatus,
+      ExchangeRate,
       CreatedAt,
       LastChangedBy,
       LastChangedAt,

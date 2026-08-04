@@ -1,4 +1,4 @@
-@AccessControl.authorizationCheck: #NOT_REQUIRED
+@AccessControl.authorizationCheck: #NOT_REQUIRED    
 @EndUserText.label: 'Sales Order Header Interface'
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZI_SalesOrder_IQ
@@ -17,7 +17,7 @@ define root view entity ZI_SalesOrder_IQ
       @Semantics.amount.currencyCode: 'Currency'
       tax_amount            as TaxAmount,
       @Semantics.amount.currencyCode: 'Currency'
-      total_amount          as TotalAmount,
+      total_amount          as TotalAmount,  
       overall_status        as OverallStatus,
 
       @Semantics.amount.currencyCode: 'Currency'
@@ -27,6 +27,8 @@ define root view entity ZI_SalesOrder_IQ
       credit_limit_usd      as CreditLimitUSD,
 
       usd_currency          as USDCurrency,
+      
+      exchange_rate     as ExchangeRate,
 
       created_by            as CreatedBy,
       created_at            as CreatedAt,

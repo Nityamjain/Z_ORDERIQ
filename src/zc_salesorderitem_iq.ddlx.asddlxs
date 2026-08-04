@@ -13,7 +13,8 @@ annotate entity ZC_SalesOrderItem_IQ with
 
   @UI.facet: [{ purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'ProductId',position: 10 },
               { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 20},
-    { id: 'Items', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Items', position: 30 }
+              { purpose: #HEADER, type: #DATAPOINT_REFERENCE, targetQualifier: 'ExchRate', position: 30 },
+    { id: 'Items', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Items', position: 40 }
   ]
 
 
@@ -131,6 +132,10 @@ annotate entity ZC_SalesOrderItem_IQ with
   @EndUserText.label: 'Status'
   @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
   ItemStatus;
+  
+  @EndUserText.label: 'Exchange Rate'
+  @UI.dataPoint: { qualifier: 'ExchRate', title: 'Exchange Rate' }
+  ExchangeRate;
   
 
 }

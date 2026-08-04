@@ -2,7 +2,7 @@
 @Search.searchable: true
 @UI: {
   headerInfo:{
-   typeName: 'Orders',
+   typeName: 'Order',
    typeNamePlural: 'Orders',
    typeImageUrl: 'sap-icon://my-sales-order',
    title:{type: #STANDARD, value: 'OrderId' }
@@ -14,14 +14,15 @@ annotate entity ZC_SalesOrder_IQ with
   @UI.facet: [{ purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'CustomerId',position: 10 },
               { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'CLUSD',position: 20 },
               { purpose: #HEADER,type: #DATAPOINT_REFERENCE,targetQualifier: 'Status', position: 30},
-    { id: 'Orders', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Orders', position: 40 },
-    { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Items', position: 50, targetElement: '_Items' }
+              { purpose: #HEADER, type: #DATAPOINT_REFERENCE, targetQualifier: 'ExchRate', position: 40 },
+    { id: 'Orders', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE, label: 'Orders', position: 50 },
+    { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE, label: 'Items', position: 60, targetElement: '_Items' }
   ]
 
   @UI.hidden: true
   OrderUuid;
-  
-  
+
+
   @UI.lineItem: [
   { position: 10, importance: #HIGH },
   {
@@ -48,34 +49,34 @@ annotate entity ZC_SalesOrder_IQ with
     label: 'Complete',
     position: 130
   }
-]
-@UI.identification: [
-  { position: 10 },
+  ]
+  @UI.identification: [
+    { position: 10 },
 
-  {
-    type: #FOR_ACTION,
-    dataAction: 'ReleaseOrder',
-    label: 'Release'
-  },
+    {
+      type: #FOR_ACTION,
+      dataAction: 'ReleaseOrder',
+      label: 'Release'
+    },
 
-  {
-    type: #FOR_ACTION,
-    dataAction: 'RejectOrder',
-    label: 'Reject'
-  },
+    {
+      type: #FOR_ACTION,
+      dataAction: 'RejectOrder',
+      label: 'Reject'
+    },
 
-  {
-    type: #FOR_ACTION,
-    dataAction: 'CancelOrder',
-    label: 'Cancel'
-  },
+    {
+      type: #FOR_ACTION,
+      dataAction: 'CancelOrder',
+      label: 'Cancel'
+    },
 
-  {
-    type: #FOR_ACTION,
-    dataAction: 'CompleteOrder',
-    label: 'Complete'
-  }
-]
+    {
+      type: #FOR_ACTION,
+      dataAction: 'CompleteOrder',
+      label: 'Complete'
+    }
+  ]
   @Search.defaultSearchElement: true
   @EndUserText.label: 'Order ID'
   OrderId;
@@ -113,10 +114,10 @@ annotate entity ZC_SalesOrder_IQ with
   @UI.identification: [{ position: 70 }]
   @EndUserText.label: 'Total Amount (USD)'
   TotalAmount;
-  
+
   @EndUserText.label: 'Credit Limit (Customer Local)'
   CreditLimit;
-  
+
   @EndUserText.label: 'Credit Limit (USD)'
   @UI.dataPoint:{qualifier: 'CLUSD',title: 'Credit Limit (USD)' }
   CreditLimitUSD;
@@ -125,6 +126,10 @@ annotate entity ZC_SalesOrder_IQ with
   @EndUserText.label: 'Overall Status'
   @UI.dataPoint:{qualifier: 'Status',title: 'Status' }
   OverallStatus;
+
+  @EndUserText.label: 'Exchange Rate'
+  @UI.dataPoint: { qualifier: 'ExchRate', title: 'Exchange Rate' }
+  ExchangeRate;
 
 
 }

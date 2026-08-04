@@ -48,6 +48,8 @@ CLASS lhc_zi_salesorderitem_iq DEFINITION INHERITING FROM cl_abap_behavior_handl
       IMPORTING keys FOR ACTION ZI_SalesOrderItem_IQ~DeliverItem RESULT result.
     METHODS convertItemAmountToUSD FOR DETERMINE ON MODIFY
       IMPORTING keys FOR ZI_SalesOrderItem_IQ~convertItemAmountToUSD.
+    METHODS determineExchangeRateItem FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR ZI_SalesOrderItem_IQ~determineExchangeRateItem.
 
 
 
@@ -775,46 +777,47 @@ ENDMETHOD.
 
   LOOP AT lt_items INTO DATA(ls_item).
 
-    " Get OrderDate from the parent header
+    " Get OrderDate AND Currency from the parent header (fallback source)
     READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
       ENTITY ZI_SalesOrder_IQ
-      FIELDS ( OrderDate )
+      FIELDS ( OrderDate Currency )
       WITH VALUE #( ( OrderUuid = ls_item-OrderUuid ) )
       RESULT DATA(lt_header).
 
     READ TABLE lt_header INTO DATA(ls_header) INDEX 1.
 
-    IF sy-subrc <> 0 OR ls_header-OrderDate IS INITIAL.
-      CONTINUE.
-    ENDIF.
+    " Fallback: if header hasn't derived OrderDate yet (create timing), use today
+    DATA(lv_order_date) = COND #( WHEN sy-subrc = 0 AND ls_header-OrderDate IS NOT INITIAL
+                                   THEN ls_header-OrderDate
+                                   ELSE sy-datum ).
+
+    " Fallback: if item's own Currency isn't propagated yet, use header's Currency
+    DATA(lv_currency) = COND #( WHEN ls_item-Currency IS NOT INITIAL
+                                 THEN ls_item-Currency
+                                 ELSE ls_header-Currency ).
 
     DATA lv_net_usd TYPE zde_net_amount.
     DATA lv_tax_usd TYPE zde_tax_amount.
     CLEAR: lv_net_usd, lv_tax_usd.
 
-    " If item currency is already USD, no conversion needed
-    IF ls_item-Currency = 'USD'.
+    IF lv_currency = 'USD'.
 
       lv_net_usd = ls_item-NetAmount.
       lv_tax_usd = ls_item-TaxAmount.
 
-    ELSE.
+    ELSEIF lv_currency IS NOT INITIAL.
 
-      " Direct lookup from own exchange rate table - no FM, no cloud API
       SELECT SINGLE exchange_rate
         FROM zso_exchange_r
-        WHERE currency_code = @ls_item-Currency
+        WHERE currency_code = @lv_currency
           AND is_active     = @abap_true
-          AND valid_from   <= @ls_header-OrderDate
-          AND valid_to     >= @ls_header-OrderDate
+          AND valid_from   <= @lv_order_date
+          AND valid_to     >= @lv_order_date
         INTO @DATA(lv_rate).
 
       IF sy-subrc = 0 AND lv_rate > 0.
         lv_net_usd = ls_item-NetAmount / lv_rate.
         lv_tax_usd = ls_item-TaxAmount / lv_rate.
-      ELSE.
-        lv_net_usd = 0.   " no valid rate found for that date
-        lv_tax_usd = 0.
       ENDIF.
 
     ENDIF.
@@ -832,6 +835,69 @@ ENDMETHOD.
     MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
       ENTITY ZI_SalesOrderItem_IQ
       UPDATE FIELDS ( NetAmountUSD TaxAmountUSD USDCurrency )
+      WITH lt_update.
+  ENDIF.
+
+ENDMETHOD.
+
+METHOD determineExchangeRateItem.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrderItem_IQ
+    FIELDS ( Currency OrderUuid )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_items).
+
+  DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrderItem_IQ.
+
+  LOOP AT lt_items INTO DATA(ls_item).
+
+    " Get OrderDate from the parent header
+    READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      FIELDS ( OrderDate )
+      WITH VALUE #( ( OrderUuid = ls_item-OrderUuid ) )
+      RESULT DATA(lt_header).
+
+    READ TABLE lt_header INTO DATA(ls_header) INDEX 1.
+
+    " Fallback: use today if header OrderDate hasn't derived yet (create timing)
+    DATA(lv_order_date) = COND #( WHEN sy-subrc = 0 AND ls_header-OrderDate IS NOT INITIAL
+                                   THEN ls_header-OrderDate
+                                   ELSE sy-datum ).
+
+    " Currency not propagated to item yet - skip, self-corrects on next pass
+    IF ls_item-Currency IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    DATA(lv_exchange_rate) = COND zso_exchange_r-exchange_rate( WHEN ls_item-Currency = 'USD' THEN 1 ).
+
+    IF ls_item-Currency <> 'USD'.
+
+      SELECT SINGLE exchange_rate
+        FROM zso_exchange_r
+        WHERE currency_code = @ls_item-Currency
+          AND is_active     = @abap_true
+          AND valid_from   <= @lv_order_date
+          AND ( valid_to   >= @lv_order_date OR valid_to = @( VALUE #( ) ) )
+        INTO @lv_exchange_rate.
+
+      IF sy-subrc <> 0.
+        lv_exchange_rate = 0.
+      ENDIF.
+
+    ENDIF.
+
+    APPEND VALUE #( %tky         = ls_item-%tky
+                     ExchangeRate = lv_exchange_rate ) TO lt_update.
+
+  ENDLOOP.
+
+  IF lt_update IS NOT INITIAL.
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrderItem_IQ
+      UPDATE FIELDS ( ExchangeRate )
       WITH lt_update.
   ENDIF.
 
@@ -883,6 +949,8 @@ CLASS lhc_ZI_SalesOrder_IQ DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR zi_salesorder_iq~validateexchangerateavailable.
     METHODS derivecustomercreditlimitusd FOR DETERMINE ON MODIFY
       IMPORTING keys FOR zi_salesorder_iq~derivecustomercreditlimitusd.
+    METHODS determineexchangerate FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR zi_salesorder_iq~determineexchangerate.
 
 
 
@@ -1656,5 +1724,61 @@ METHOD deriveCustomerCreditLimitUSD.
   ENDIF.
 
 ENDMETHOD.
+
+METHOD determineExchangeRate.
+
+  READ ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+    ENTITY ZI_SalesOrder_IQ
+    FIELDS ( OrderDate Currency )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_header).
+
+  DATA lt_update TYPE TABLE FOR UPDATE ZI_SalesOrder_IQ.
+
+  LOOP AT lt_header INTO DATA(ls_header).
+
+    " Fallback: use today if OrderDate hasn't been derived yet (create timing)
+    DATA(lv_order_date) = COND #( WHEN ls_header-OrderDate IS NOT INITIAL
+                                   THEN ls_header-OrderDate
+                                   ELSE sy-datum ).
+
+    " Currency not derived yet in this pass - skip for now, will self-correct
+    " once deriveCustomerCurrency writes it and re-triggers this determination
+    IF ls_header-Currency IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    DATA(lv_exchange_rate) = COND zso_exchange_r-exchange_rate( WHEN ls_header-Currency = 'USD' THEN 1 ).
+
+    IF ls_header-Currency <> 'USD'.
+
+      SELECT SINGLE exchange_rate
+        FROM zso_exchange_r
+        WHERE currency_code = @ls_header-Currency
+          AND is_active     = @abap_true
+          AND valid_from   <= @lv_order_date
+          AND ( valid_to   >= @lv_order_date OR valid_to = @( VALUE #( ) ) )
+        INTO @lv_exchange_rate.
+
+      IF sy-subrc <> 0.
+        lv_exchange_rate = 0.   " no valid rate found for that date
+      ENDIF.
+
+    ENDIF.
+
+    APPEND VALUE #( %tky         = ls_header-%tky
+                     ExchangeRate = lv_exchange_rate ) TO lt_update.
+
+  ENDLOOP.
+
+  IF lt_update IS NOT INITIAL.
+    MODIFY ENTITIES OF ZI_SalesOrder_IQ IN LOCAL MODE
+      ENTITY ZI_SalesOrder_IQ
+      UPDATE FIELDS ( ExchangeRate )
+      WITH lt_update.
+  ENDIF.
+
+ENDMETHOD.
+
 
 ENDCLASS.

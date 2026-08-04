@@ -4,6 +4,7 @@
   headerInfo: {
     typeName: 'Product',
     typeNamePlural: 'Products',
+    typeImageUrl: 'sap-icon://product',
     title: { type: #STANDARD, value: 'ProductName' },
     description: { type: #STANDARD, value: 'ProductId' }
   }

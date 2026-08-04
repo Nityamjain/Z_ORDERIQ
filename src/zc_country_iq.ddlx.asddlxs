@@ -5,6 +5,7 @@
   headerInfo: {
     typeName: 'Country',
     typeNamePlural: 'Countries',
+    typeImageUrl: 'sap-icon://globe',
     title: {
       type: #STANDARD,
       value: 'CountryName'

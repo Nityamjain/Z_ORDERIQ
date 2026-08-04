@@ -49,6 +49,7 @@ define view entity ZC_SalesOrderItem_IQ
       @Consumption.valueHelpDefinition: [{entity:{name: 'ZVH_ITEM_STATUS' , element:'ItemStatus'}}]
       
       ItemStatus,
+      ExchangeRate,
       LocalLastChangedAt,
       /* Associations */
       _Product    : redirected to ZC_Product_IQ,

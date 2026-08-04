@@ -43,7 +43,7 @@
 
       side effects
       {
-        field CustomerId affects field OverallStatus, field OrderDate, field Currency, field CreditLimit, field CreditLimitUSD;
+        field CustomerId affects field OverallStatus, field OrderDate, field Currency, field CreditLimit, field CreditLimitUSD, field ExchangeRate;
 
       }
 
@@ -53,6 +53,7 @@
       determination deriveOrderDate on modify { create; }
       determination deriveCustomerCurrency on modify { create; field CustomerId; }
       determination deriveCustomerCreditLimitUSD on modify { create; field CustomerId, OrderDate; }
+      determination determineExchangeRate on modify { create; field OrderDate, CustomerId, Currency; }
 
 
 
@@ -72,7 +73,7 @@
 
 
       field ( readonly, numbering : managed ) OrderUuid;
-      field ( readonly ) NetAmount, TaxAmount, OverallStatus, TotalAmount, CreditLimit, CreditLimitUSD, USDCurrency,Currency;
+      field ( readonly ) NetAmount, TaxAmount, OverallStatus, TotalAmount, CreditLimit, CreditLimitUSD, USDCurrency,Currency,ExchangeRate;
       field ( mandatory ) CustomerId, OrderDate;
       association _Items { create; with draft; }
 
@@ -90,6 +91,7 @@
           CreditLimitUSD     = credit_limit_usd;
           USDCurrency        = usd_currency;
           OverallStatus      = overall_status;
+          ExchangeRate      = exchange_rate;
           CreatedBy          = created_by;
           CreatedAt          = created_at;
           LastChangedBy      = last_changed_by;
@@ -108,7 +110,7 @@
       update;
       delete;
       field ( readonly ) OrderUuid, ItemNumber, NetAmount, TaxAmount, NetAmountUSD, TaxAmountUSD,
-      NetPrice, TaxCode, QuantityUnit, Currency, USDCurrency, ItemStatus;
+      NetPrice, TaxCode, QuantityUnit, Currency, USDCurrency, ItemStatus,ExchangeRate;
       field ( mandatory ) ProductId, OrderQuantity;
       field ( readonly, numbering : managed ) ItemUuid;
       association _SalesOrder { with draft; }
@@ -132,6 +134,7 @@
             field TaxCode,
             field Currency,
             field QuantityUnit,
+            field ExchangeRate,
             entity _SalesOrder;
 
         field OrderQuantity
@@ -153,7 +156,8 @@
       determination setInitialItemStatus on modify { create; }
       determination determineItemNumber on modify { create; }
 
-      determination convertItemAmountToUSD on modify { create; field NetAmount, TaxAmount; }
+      determination convertItemAmountToUSD on modify { create;  field NetAmount, TaxAmount,QuantityUnit;}
+      determination determineExchangeRateItem on modify { create; field ProductId; }
 
 
 
@@ -185,6 +189,7 @@
           USDCurrency           = usd_currency;
           RequestedDeliveryDate = requested_delivery_date;
           ItemStatus            = item_status;
+          ExchangeRate          = exchange_rate;
           LocalLastChangedAt    = local_last_changed_at;
         }
     }

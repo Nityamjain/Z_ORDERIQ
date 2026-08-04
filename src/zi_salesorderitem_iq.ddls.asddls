@@ -30,6 +30,7 @@ define view entity ZI_SalesOrderItem_IQ
       @Semantics.amount.currencyCode: 'USDCurrency'
       tax_amount_usd          as TaxAmountUSD,
       usd_currency            as USDCurrency,
+      exchange_rate     as ExchangeRate,
       local_last_changed_at   as LocalLastChangedAt,
       _SalesOrder,
       _Product

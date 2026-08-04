@@ -5,6 +5,7 @@
   headerInfo: {
     typeName: 'USD Exchange Rate',
     typeNamePlural: 'USD Exchange Rates',
+    typeImageUrl: 'sap-icon://currency',
     title: {
       type: #STANDARD,
       value: 'CurrencyCode'
